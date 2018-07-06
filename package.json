@@ -1,0 +1,34 @@
+{
+  "name": "clone-lite-cli",
+  "version": "0.1.0",
+  "description": "Clone a single file (or subset of files) from a GitHub repository",
+  "main": "clone-lite",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kyle-west/clone-lite-cli.git"
+  },
+  "keywords": [
+    "github",
+    "clone",
+    "lite",
+    "single",
+    "file",
+    "access"
+  ],
+  "author": "kyle-west@github.com",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kyle-west/clone-lite-cli/issues"
+  },
+  "homepage": "https://github.com/kyle-west/clone-lite-cli#readme",
+  "dependencies": {
+    "file-system": "^2.2.2"
+  },
+  "preferGlobal": true,
+  "bin": {
+    "clone-lite": "clone-lite"
+  }
+}

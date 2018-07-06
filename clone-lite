@@ -1,0 +1,69 @@
+#!/usr/bin/env node
+
+var fs = require('file-system');
+
+class BadArgsError extends Error {
+  constructor () {
+    super('// TODO: Make this message better');
+  }
+}
+
+/**************************************************************************
+ * USAGE:     clone-lite [github url] [file1] [file2] [file3] [...] 
+ *************************************************************************/
+
+const sync = require('child_process').spawnSync;
+
+function parseURL(url) {
+  let parts = url.split("/");
+  return {
+    name: parts[parts.length -1].replace('.git', ''),
+    url: url.replace('.git', '').replace('https://github.com','https://api.github.com/repos')
+  }
+}
+
+function interpolateArgs () {
+  if (process.argv.length < 3) {
+    throw new BadArgsError();
+  }
+
+  // TODO make this more inuitive to user mix ups
+  let urlData = parseURL(process.argv[2]);
+  return {
+    repoName: urlData.name,
+    getURL: urlData.url,
+    files: process.argv.slice(3)
+  }
+}
+
+
+function get(file, url, dir, version = 'master') {
+  let formattedURL = `${url}/contents/${file}?ref=${version}&access_token=${process.env.GITHUB_AUTH_TOKEN}`;
+  console.log(`clone-lite\t\t\t${url.replace('api.github.com/repos','github.com')}/${file}#${version}`);
+  sync('curl', [
+    '-o', `${dir}/${file}`,
+    formattedURL
+  ])
+  expandFileContents(`${dir}/${file}`);
+}
+
+function expandFileContents (filePath) {
+  let json = JSON.parse(sync('cat', [filePath]).stdout.toString());
+  if (json.encoding && json.content) {
+    let fileContents = new Buffer(json.content, json.encoding).toString()
+    fs.writeFileSync(filePath, fileContents);
+  } else {
+    console.warn(filePath, 'Could not be expanded.')
+  }
+}
+
+function mkdir(name) {
+  console.log("MKDIR: ",  name);
+  sync('mkdir', [name])
+}
+
+const repo = interpolateArgs();
+mkdir(repo.repoName)
+repo.files.forEach(file => {
+  get(file, repo.getURL, repo.repoName);
+});
