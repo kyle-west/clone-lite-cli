@@ -8,6 +8,29 @@ class BadArgsError extends Error {
   }
 }
 
+class SemanticVersion {
+  constructor(version) {
+    this.versionText = version;
+    let parts = version.split('.');
+    if (parts.length === 3) {
+      this.isSemVer = true;
+      this.patch = parts[2];
+      this.patch = parts[1];
+  
+      if (isNaN(parts[0][0])) {
+        this.major = parts[0].slice(1);
+        this.pin = parts[0][0];
+      } else {
+        this.major = parts[0];
+      }
+    }
+  }
+
+  toString () {
+    return this.versionText;
+  }
+}
+
 /**************************************************************************
  * USAGE:     clone-lite [github url] [file1] [file2] [file3] [...] 
  *************************************************************************/
@@ -16,9 +39,19 @@ const sync = require('child_process').spawnSync;
 
 function parseURL(url) {
   let parts = url.split("/");
+  let version = new SemanticVersion('master');
+  let name = parts[parts.length -1];
+  if (name.includes('#')) {
+    let parts = name.split('#');
+    name = parts[0];
+    version = new SemanticVersion(parts[1]);
+    url = url.replace('#' + parts[1],'');
+  }
+
   return {
-    name: parts[parts.length -1].replace('.git', ''),
-    url: url.replace('.git', '').replace('https://github.com','https://api.github.com/repos')
+    name: name.replace('.git', ''),
+    url: url.replace('.git', '').replace('https://github.com','https://api.github.com/repos'),
+    version: version
   }
 }
 
@@ -27,19 +60,22 @@ function interpolateArgs () {
     throw new BadArgsError();
   }
 
+  let args = process.argv.slice(0); // deep clone
+
   // TODO make this more inuitive to user mix ups
-  let urlData = parseURL(process.argv[2]);
+  let urlData = parseURL(args[2]);
   return {
     repoName: urlData.name,
     getURL: urlData.url,
-    files: process.argv.slice(3)
+    version: urlData.version,
+    files: args.slice(3)
   }
 }
 
 
-function get(file, url, dir, version = 'master') {
-  let formattedURL = `${url}/contents/${file}?ref=${version}&access_token=${process.env.GITHUB_AUTH_TOKEN}`;
-  console.log(`clone-lite\t\t\t${url.replace('api.github.com/repos','github.com')}/${file}#${version}`);
+function get(file, url, dir, version) {
+  let formattedURL = `${url}/contents/${file}?ref=${version.toString()}&access_token=${process.env.GITHUB_AUTH_TOKEN}`;
+  console.log(`clone-lite\t\t\t${url.replace('api.github.com/repos','github.com')}/${file}#${version.toString()}`);
   sync('curl', [
     '-o', `${dir}/${file}`,
     formattedURL
@@ -62,8 +98,15 @@ function mkdir(name) {
   sync('mkdir', [name])
 }
 
-const repo = interpolateArgs();
-mkdir(repo.repoName)
-repo.files.forEach(file => {
-  get(file, repo.getURL, repo.repoName);
-});
+
+
+
+function main () {
+  const repo = interpolateArgs();
+  mkdir(repo.repoName);
+  repo.files.forEach(file => {
+    get(file, repo.getURL, repo.repoName, repo.version);
+  });
+}
+
+main();
