@@ -5,7 +5,7 @@ Have you ever wanted to run `git clone` on a single file? This CLI allows for yo
 Below is an example of how to clone a single `package.json` file from a repo. 
 
 ```sh
-clone-lite https://github.com/owner/repo package.json
+clone-lite https://github.com/owner/repo.git#version-or-branch package.json
 ```
 
 <br>
@@ -26,6 +26,3 @@ export GITHUB_AUTH_TOKEN=the-oauth-access-token
 
 <br>
 
-## COMING SOON
-
-Right now `clone-lite` only pins to the master branch of a repo. We will be soon adding a feature to install from any tag.
